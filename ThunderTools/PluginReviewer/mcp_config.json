@@ -1,0 +1,13 @@
+{
+  "mcpServers": {
+    "thunder-plugin-reviewer": {
+      "command": "python",
+      "args": [
+        "ThunderTools/PluginReviewer/mcp_server.py"
+      ],
+      "env": {},
+      "disabled": false,
+      "alwaysAllow": []
+    }
+  }
+}

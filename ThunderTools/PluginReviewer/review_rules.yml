@@ -1,0 +1,275 @@
+# Thunder Plugin Review Rules
+# Auto-generated from .github/instructions/
+
+version: "1.0"
+description: "Comprehensive review rules for Thunder plugins based on framework guidelines"
+
+categories:
+  - name: "Plugin Lifecycle"
+    severity: "critical"
+    rules:
+      - id: "LIFECYCLE_001"
+        name: "IPlugin interface implementation"
+        description: "Every plugin must implement IPlugin interface with Initialize, Deinitialize, and Information methods"
+        pattern: "class.*:.*public.*IPlugin"
+        check_type: "class_inheritance"
+        required_methods: ["Initialize", "Deinitialize", "Information"]
+        
+      - id: "LIFECYCLE_002"
+        name: "Initialize returns empty string on success"
+        description: "Initialize() must return empty string on success, error message on failure"
+        pattern: 'return\s+_T\(".*"\)|return\s+".*"'
+        context: "Initialize"
+        
+      - id: "LIFECYCLE_003"
+        name: "No activation logic in constructor"
+        description: "Constructor must only zero-initialize members - no sockets, timers, allocations"
+        antipattern: ["new\\s+", "socket\\(", "Timer", "AddRef\\(", "Register\\("]
+        context: "constructor"
+        
+      - id: "LIFECYCLE_004"
+        name: "No IShell access in destructor"
+        description: "Destructor must not access _service or call COM interfaces"
+        antipattern: ["_service->", "->Release\\(", "->AddRef\\("]
+        context: "destructor"
+        
+      - id: "LIFECYCLE_005"
+        name: "IShell* must be AddRef'd when stored"
+        description: "If storing IShell* beyond Initialize(), must call service->AddRef()"
+        pattern: "_service\\s*=\\s*service"
+        require_nearby: "service->AddRef\\(\\)|_service->AddRef\\(\\)"
+        
+  - name: "JSON-RPC"
+    severity: "high"
+    rules:
+      - id: "JSONRPC_001"
+        name: "Unregister all JSON-RPC methods"
+        description: "Every Register() in Initialize() must have matching Unregister() in Deinitialize()"
+        pattern: 'Register.*?_T\("([^"]+)"\)'
+        check_matching: 'Unregister.*?_T\("PLACEHOLDER"\)'
+        
+      - id: "JSONRPC_002"
+        name: "No reserved method names"
+        description: "Never register handlers for built-in methods: versions, exists, register, unregister"
+        antipattern: ['Register.*"versions"', 'Register.*"exists"', 'Register.*"register"', 'Register.*"unregister"']
+        
+  - name: "Reference Counting"
+    severity: "critical"
+    rules:
+      - id: "REFCOUNT_001"
+        name: "Release stored IShell in Deinitialize"
+        description: "Must call _service->Release() and set to nullptr in Deinitialize()"
+        pattern: "_service\\s*->\\s*Release\\(\\)"
+        context: "Deinitialize"
+        require_nearby: "_service\\s*=\\s*nullptr"
+        
+      - id: "REFCOUNT_002"
+        name: "Release iterator pointers"
+        description: "Always call Release() on iterator pointers returned from COM methods"
+        pattern: "IIteratorType.*=.*"
+        require_nearby: "->Release\\(\\)"
+        
+      - id: "REFCOUNT_003"
+        name: "AddRef on QueryInterface result if stored"
+        description: "QueryInterface returns pointer with one ref - must not AddRef if storing immediately"
+        pattern: "QueryInterface.*<.*>\\("
+        suggestion: "Returned pointer already has one ref - store without AddRef, Release when done"
+        
+  - name: "Inter-Process Communication"
+    severity: "high"
+    rules:
+      - id: "IPC_001"
+        name: "No JSON-RPC for in-process calls"
+        description: "Never use JSON-RPC layer for in-process plugin communication"
+        antipattern: ["service->Invoke\\(", "JSONRPC::Link"]
+        suggestion: "Use service->QueryInterfaceByCallsign<T>(callsign) for direct COM interface"
+        
+      - id: "IPC_002"
+        name: "No CommunicatorClient in daemon plugins"
+        description: "Never create CommunicatorClient inside a plugin running in the daemon"
+        antipattern: ["RPC::CommunicatorClient", "CommunicatorClient"]
+        context: "plugin"
+        suggestion: "Use service->QueryInterfaceByCallsign<T>() - CommunicatorClient is for external tools only"
+        
+      - id: "IPC_003"
+        name: "Use PluginSmartInterfaceType for cross-plugin interfaces"
+        description: "Use PluginSmartInterfaceType<T> instead of raw QueryInterfaceByCallsign when storing across activation events"
+        pattern: "QueryInterfaceByCallsign<.*>\\("
+        suggestion: "Consider PluginHost::PluginSmartInterfaceType<T> for lifecycle-aware storage"
+        
+  - name: "Subsystem Management"
+    severity: "medium"
+    rules:
+      - id: "SUBSYS_001"
+        name: "Release SubSystems pointer"
+        description: "service->SubSystems() returns ref-counted pointer - must Release()"
+        pattern: "service->SubSystems\\(\\)"
+        require_nearby: "->Release\\(\\)"
+        
+      - id: "SUBSYS_002"
+        name: "Unregister subsystem notifications"
+        description: "Subsystem notification sinks must be unregistered in Deinitialize()"
+        pattern: "subsystems->Register\\("
+        check_matching: "subsystems->Unregister\\("
+        
+  - name: "Threading and Synchronization"
+    severity: "high"
+    rules:
+      - id: "THREAD_001"
+        name: "No std::thread or pthread_create"
+        description: "Use Core::IWorkerPool::Submit() for pooled work or Core::Thread for dedicated threads"
+        antipattern: ["std::thread", "pthread_create"]
+        suggestion: "Use Core::IWorkerPool::Instance().Submit(job) or subclass Core::Thread"
+        
+      - id: "THREAD_002"
+        name: "Use Core::CriticalSection not std::mutex"
+        description: "Prefer Thunder abstractions over standard library for portability"
+        antipattern: ["std::mutex", "std::lock_guard"]
+        suggestion: "Use Core::CriticalSection with Core::SafeSyncType<>"
+        
+      - id: "THREAD_003"
+        name: "OOP plugin needs minimum 2 threads"
+        description: "Out-of-process plugins using PluginSmartInterfaceType must set threads >= 2 in config"
+        pattern: "PluginSmartInterfaceType"
+        context: "implementation_class"
+        suggestion: "Set 'threads': 2 or higher in plugin root config to avoid monitor registration deadlock"
+        
+  - name: "Code Style and Safety"
+    severity: "medium"
+    rules:
+      - id: "STYLE_001"
+        name: "Use C++ style casts"
+        description: "Always use static_cast, reinterpret_cast, const_cast - never C-style casts"
+        antipattern: '\\([A-Z][A-Za-z0-9_]*\\*?\\)\\s*[a-z_]'
+        suggestion: "Use static_cast<>, reinterpret_cast<>, or const_cast<>"
+        
+      - id: "STYLE_002"
+        name: "Use explicit integer widths"
+        description: "Use uint8_t, uint16_t, uint32_t, uint64_t - not int, char, short, long"
+        antipattern: ["\\bint\\s+", "\\bchar\\s+(?!\\*)", "\\bshort\\s+", "\\blong\\s+(?!long)"]
+        exceptions: ["main\\(int argc"]
+        suggestion: "Use explicit width types: uint32_t, int32_t, etc."
+        
+      - id: "STYLE_003"
+        name: "Initialize variables at definition"
+        description: "Always initialize variables at point of definition"
+        pattern: "^\\s*(uint\\d+_t|int\\d+_t|bool|string)\\s+[a-z_][a-z0-9_]*;$"
+        suggestion: "Initialize at definition: uint32_t count = 0;"
+        
+      - id: "STYLE_004"
+        name: "Use ASSERT not assert"
+        description: "Use Thunder's ASSERT() macro, not stdlib assert()"
+        antipattern: ["\\bassert\\s*\\("]
+        suggestion: "Use ASSERT() from Thunder framework"
+        
+  - name: "Error Handling"
+    severity: "high"
+    rules:
+      - id: "ERROR_001"
+        name: "No exceptions"
+        description: "Thunder is compiled with -fno-exceptions - never throw or use try/catch"
+        antipattern: ["\\bthrow\\s+", "\\btry\\s*\\{", "\\bcatch\\s*\\("]
+        
+      - id: "ERROR_002"
+        name: "Return Core::ERROR_NONE on success"
+        description: "COM method implementations should return Core::ERROR_NONE (0) on success"
+        pattern: "return\\s+0;|return\\s+ERROR_NONE"
+        context: "interface_implementation"
+        
+  - name: "Logging"
+    severity: "medium"
+    rules:
+      - id: "LOG_001"
+        name: "Use SYSLOG not printf"
+        description: "Never use printf, fprintf, syslog directly - use SYSLOG() or TRACE()"
+        antipattern: ["\\bprintf\\s*\\(", "\\bfprintf\\s*\\(", "\\bsyslog\\s*\\("]
+        suggestion: "Use SYSLOG() for production logging or TRACE() for debug"
+        
+  - name: "Interface Definitions"
+    severity: "critical"
+    rules:
+      - id: "INTERFACE_001"
+        name: "Virtual public IUnknown inheritance"
+        description: "All COM interfaces must inherit virtual public Core::IUnknown"
+        pattern: "struct.*EXTERNAL.*:.*public.*IUnknown"
+        check_type: "interface_definition"
+        require: "virtual public"
+        
+      - id: "INTERFACE_002"
+        name: "Interface ID declaration"
+        description: "Every COM interface must declare enum { ID = RPC::ID_XXX };"
+        pattern: "enum\\s*\\{\\s*ID\\s*=\\s*RPC::ID_"
+        context: "interface_definition"
+        
+      - id: "INTERFACE_003"
+        name: "Default virtual destructor"
+        description: "Interface destructor must be virtual and defaulted"
+        pattern: "~I[A-Z][A-Za-z0-9]*\\(\\).*override.*=.*default"
+        context: "interface_definition"
+        
+      - id: "INTERFACE_004"
+        name: "EXTERNAL on interface definitions"
+        description: "Every interface struct must use EXTERNAL macro"
+        pattern: "struct\\s+EXTERNAL\\s+I[A-Z]"
+        context: "interface_definition"
+        
+  - name: "Configuration"
+    severity: "medium" 
+    rules:
+      - id: "CONFIG_001"
+        name: "Read config in Initialize only"
+        description: "Always read config from service->ConfigLine() in Initialize(), never in constructor"
+        pattern: "service->ConfigLine\\(\\)"
+        context: "Initialize"
+        
+      - id: "CONFIG_002"
+        name: "Use service path methods"
+        description: "Use service->DataPath(), PersistentPath(), VolatilePath() - never hardcode paths"
+        antipattern: ['"/tmp/', '"/var/', '"C:\\\\']
+        suggestion: "Use service->DataPath(), service->PersistentPath(), service->VolatilePath()"
+        
+  - name: "Metadata"
+    severity: "high"
+    rules:
+      - id: "META_001"
+        name: "Plugin metadata registration"
+        description: "Must register Plugin::Metadata<> at static init time in .cpp file"
+        pattern: "Plugin::Metadata<.*>\\s+metadata\\("
+        context: "plugin_implementation"
+        
+  - name: "Dependency Management"
+    severity: "critical"
+    rules:
+      - id: "DEP_001"
+        name: "core/ has no upper-layer dependencies"
+        description: "Source/core/ must never include from plugins/, com/, or Thunder/"
+        pattern: '#include\\s*[<"](?:plugins|com|Thunder)/'
+        context: "core_layer"
+        
+      - id: "DEP_002"
+        name: "plugins/ never includes Thunder runtime"
+        description: "Source/plugins/ must never include Source/Thunder/ headers"
+        pattern: '#include\\s*[<"]Thunder/'
+        context: "plugins_layer"
+
+ai_prompts:
+  review_request: |
+    You are a Thunder plugin code reviewer. Analyze the following C++ code for compliance with Thunder framework guidelines.
+    
+    Focus on:
+    - Plugin lifecycle (Initialize/Deinitialize contract)
+    - Reference counting correctness
+    - JSON-RPC registration/unregistration matching
+    - Proper use of COM interfaces
+    - Threading and synchronization
+    - Code style and safety
+    
+    Provide specific line references and actionable fixes for any violations found.
+    
+  fix_suggestion: |
+    Based on the review findings, suggest specific code changes to fix the identified issues.
+    Provide before/after code snippets with explanations.
+    
+  compliance_summary: |
+    Summarize the overall Thunder framework compliance of this plugin.
+    Highlight critical issues that must be fixed before production use.
