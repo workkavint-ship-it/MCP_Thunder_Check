@@ -1,0 +1,15 @@
+{
+  "$schema": "plugin.schema.json",
+  "info": {
+    "title": "Dictionary2 Plugin",
+    "callsign": "Dictionary2",
+    "locator": "libThunderDictionary2.so",
+    "status": "development",
+    "description": [
+      ""
+    ],
+    "version": "1.0"
+  },
+  "interface": {
+  }
+}

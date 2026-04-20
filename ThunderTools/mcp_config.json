@@ -1,0 +1,20 @@
+{
+  "// UNIVERSAL MCP CONFIGURATION": "Copy this to your MCP client config",
+  "// Replace '/absolute/path/to' with your actual Thunder_MCP location",
+  "// ": "",
+  "// For Claude Desktop": "See claude_desktop_config.json in user home",
+  "// For VS Code": "See .vscode/settings.json",
+  "// For other clients": "See MCP_SETUP.md",
+  
+  "mcpServers": {
+    "thunder-tools": {
+      "command": "python",
+      "args": [
+        "/absolute/path/to/Thunder_MCP/ThunderTools/server.py"
+      ],
+      "env": {},
+      "disabled": false,
+      "alwaysAllow": []
+    }
+  }
+}
