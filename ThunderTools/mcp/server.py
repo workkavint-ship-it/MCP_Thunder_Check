@@ -12,14 +12,14 @@ from typing import Any, Dict
 
 # Ensure workspace root is on sys.path so absolute imports like
 # `from ThunderTools.core import ...` work when launching this file directly.
-WORKSPACE_ROOT = Path(__file__).resolve().parent.parent
+WORKSPACE_ROOT = Path(__file__).resolve().parents[2]
 if str(WORKSPACE_ROOT) not in sys.path:
     sys.path.insert(0, str(WORKSPACE_ROOT))
 
 # Import tool classes
-from ThunderTools.tools.review_plugin import ReviewPluginTool
-from ThunderTools.tools.review_directory import ReviewDirectoryTool
-from ThunderTools.tools.generate_skeleton import GenerateSkeletonTool
+from ThunderTools.mcp.tools.review_plugin import ReviewPluginTool
+from ThunderTools.mcp.tools.review_directory import ReviewDirectoryTool
+from ThunderTools.mcp.tools.generate_skeleton import GenerateSkeletonTool
 
 
 class ThunderToolsServer:
@@ -32,7 +32,7 @@ class ThunderToolsServer:
         }
         
         # Base path for workspace
-        self.base_path = Path(__file__).parent.parent
+        self.base_path = Path(__file__).parents[2]
         
         # Initialize tools
         self.tools = {

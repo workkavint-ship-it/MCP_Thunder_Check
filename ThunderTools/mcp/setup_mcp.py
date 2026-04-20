@@ -55,7 +55,7 @@ def generate_config(client_type):
             "github.copilot.chat.mcp.servers": {
                 "thunder-tools": {
                     "command": "python",
-                    "args": ["${workspaceFolder}/ThunderTools/server.py"]
+                    "args": ["${workspaceFolder}/ThunderTools/mcp/server.py"]
                 }
             }
         }

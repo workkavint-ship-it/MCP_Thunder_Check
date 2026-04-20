@@ -10,7 +10,7 @@
     "thunder-tools": {
       "command": "python",
       "args": [
-        "/absolute/path/to/Thunder_MCP/ThunderTools/server.py"
+        "/absolute/path/to/Thunder_MCP/ThunderTools/mcp/server.py"
       ],
       "env": {},
       "disabled": false,
