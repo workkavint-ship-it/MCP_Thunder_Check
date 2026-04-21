@@ -44,7 +44,7 @@ class ReviewPluginTool:
     def get_definition(self) -> Dict[str, Any]:
         """Get tool definition for MCP"""
         return {
-            "name": "review_file",
+            "name": "review_plugin",
             "description": (
                 "Review specific Thunder plugin files for compliance with framework guidelines. "
                 "Checks C++ code against Thunder/.github/instructions/plugins.instructions.md "

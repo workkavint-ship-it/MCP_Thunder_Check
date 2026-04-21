@@ -57,8 +57,7 @@ def generate_config(client_type):
                     "command": "python",
                     "args": ["${workspaceFolder}/ThunderTools/mcp/server.py"]
                 }
-            },
-            "github.copilot.chat.prompts.path": "${workspaceFolder}/ThunderTools/mcp/prompts"
+            }
         }
     else:  # Generic (Claude Desktop, Cursor, etc.)
         # Use forward slashes for cross-platform compatibility
@@ -81,14 +80,9 @@ def main():
     print()
     
     mcp_path = get_mcp_server_path()
-    prompts_path = Path(__file__).parent / "prompts"
     locations = get_config_locations()
     
     print(f"🔍 Detected MCP Server Path:\n   {mcp_path}\n")
-    
-    if prompts_path.exists():
-        print(f"✨ Custom Prompts Available:\n   {prompts_path.absolute()}\n")
-        print("   Enables slash commands: /review, /review-file, /generate\n")
     
     print("📋 Select your AI client:")
     print()
@@ -157,12 +151,12 @@ def main():
         print("  1. Open .vscode/settings.json in your workspace")
         print("  2. Add the configuration JSON")
         print("  3. Restart VS Code")
-        print("  4. Test: In Copilot Chat, type '/review Dictionary' or ask 'What tools are available?'")
+        print("  4. Test: In Copilot Chat, use #review_plugin_directory Dictionary1")
         print()
-        print("  💡 Slash commands enabled:")
-        print("     - /review <plugin>  - Review entire plugin")
-        print("     - /review-file <file> - Review specific files")
-        print("     - /generate - Generate new plugin")
+        print("  💡 Use # syntax to call tools directly:")
+        print("     - #review_plugin_directory Dictionary")
+        print("     - #review_plugin Dictionary.cpp")
+        print("     - #generate_skeleton")
     elif config_type == "cursor":
         print("  1. Open (or create) the config file shown above")
         print("  2. Add the configuration JSON")
@@ -201,6 +195,11 @@ def main():
             
             print(f"✅ Saved to {settings_file}")
             print("   Restart VS Code to use the Thunder Tools!")
+            print()
+            print("   💡 Use # syntax in Copilot Chat:")
+            print("      - #review_plugin_directory Dictionary")
+            print("      - #review_plugin Dictionary.cpp")
+            print("      - #generate_skeleton")
     
     return 0
 

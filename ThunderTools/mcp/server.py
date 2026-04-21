@@ -36,9 +36,9 @@ class ThunderToolsServer:
         
         # Initialize tools
         self.tools = {
-            "review_file": ReviewPluginTool(self.base_path),
-            "review": ReviewDirectoryTool(self.base_path),
-            "generate": GenerateSkeletonTool(self.base_path)
+            "review_plugin": ReviewPluginTool(self.base_path),
+            "review_plugin_directory": ReviewDirectoryTool(self.base_path),
+            "generate_skeleton": GenerateSkeletonTool(self.base_path)
         }
     
     def handle_initialize(self, params: Dict[str, Any]) -> Dict[str, Any]:
