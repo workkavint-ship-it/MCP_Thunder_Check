@@ -18,7 +18,7 @@ def run_review(args: Namespace) -> int:
 
     # Resolve repository root from file location so CLI works from any cwd.
     workspace = Path(__file__).resolve().parents[3]
-    rules_file = Path(__file__).parent.parent.parent / "tools" / "review_rules.yml"
+    rules_file = Path(__file__).parent.parent.parent / "mcp" / "tools" / "review_rules.yml"
     
     # Create engine
     engine = ReviewEngine(rules_file)
