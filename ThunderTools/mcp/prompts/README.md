@@ -2,6 +2,8 @@
 
 This directory contains prompt files that standardize how AI assistants interact with Thunder MCP tools.
 
+**Location:** `ThunderTools/mcp/prompts/` (co-located with MCP server and tools)
+
 ## Available Prompts
 
 ### `/review` - Review Plugin Directory
@@ -46,7 +48,7 @@ Generates complete Thunder plugin skeleton with proper structure. Uses interacti
 ## How It Works
 
 ### For VS Code + GitHub Copilot:
-1. Prompts in `.github/prompts/` are automatically discovered
+1. Prompts in `ThunderTools/mcp/prompts/` are configured in `.vscode/settings.json`
 2. Use natural language commands (e.g., "Review Dictionary")
 3. Copilot uses prompt instructions to call MCP tools correctly
 4. Standardized output formatting across all sessions
