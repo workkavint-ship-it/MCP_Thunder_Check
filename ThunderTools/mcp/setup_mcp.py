@@ -151,12 +151,12 @@ def main():
         print("  1. Open .vscode/settings.json in your workspace")
         print("  2. Add the configuration JSON")
         print("  3. Restart VS Code")
-        print("  4. Test: In Copilot Chat, use #review_plugin_directory Dictionary1")
+        print("  4. Test: In Copilot Chat, use #review-dir Dictionary1")
         print()
         print("  💡 Use # syntax to call tools directly:")
-        print("     - #review_plugin_directory Dictionary")
-        print("     - #review_plugin Dictionary.cpp")
-        print("     - #generate_skeleton")
+        print("     - #review-dir Dictionary")
+        print("     - #review-file Dictionary.cpp")
+        print("     - #generate")
     elif config_type == "cursor":
         print("  1. Open (or create) the config file shown above")
         print("  2. Add the configuration JSON")
@@ -197,9 +197,9 @@ def main():
             print("   Restart VS Code to use the Thunder Tools!")
             print()
             print("   💡 Use # syntax in Copilot Chat:")
-            print("      - #review_plugin_directory Dictionary")
-            print("      - #review_plugin Dictionary.cpp")
-            print("      - #generate_skeleton")
+            print("      - #review-dir Dictionary")
+            print("      - #review-file Dictionary.cpp")
+            print("      - #generate")
     
     return 0
 
