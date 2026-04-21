@@ -33,7 +33,7 @@ class ReviewDirectoryTool:
     def get_definition(self) -> Dict[str, Any]:
         """Get tool definition for MCP"""
         return {
-            "name": "review_plugin_directory",
+            "name": "review",
             "description": (
                 "Review all C++ files in a Thunder plugin directory recursively. "
                 "Accepts either a plugin name (e.g., 'Dictionary1') or full path (e.g., 'ThunderNanoServices/Dictionary1'). "

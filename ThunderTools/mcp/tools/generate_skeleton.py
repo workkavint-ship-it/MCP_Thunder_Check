@@ -34,7 +34,7 @@ class GenerateSkeletonTool:
     def get_definition(self) -> Dict[str, Any]:
         """Get tool definition for MCP"""
         return {
-            "name": "generate_skeleton",
+            "name": "generate",
             "description": (
                 "Generate a Thunder plugin skeleton. "
                 "WORKFLOW — you MUST follow this exactly:\n"
