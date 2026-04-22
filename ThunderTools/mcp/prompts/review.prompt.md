@@ -7,96 +7,23 @@ description: Review an entire Thunder plugin directory for compliance issues
 
 Use the **review_plugin_directory** MCP tool to review all C++ files in a Thunder plugin directory.
 
-## When to Use
-
-- User asks to review a plugin
-- User wants to check compliance for an entire plugin directory
-- User mentions checking "Dictionary", "NetworkControl", or other Thunder plugins
-
 ## How to Call
 
-```
-Call the MCP tool: review_plugin_directory
-Arguments:
-  directory: <plugin_name_or_path>
-```
+Call the MCP tool with:
+- **Tool Name**: `review_plugin_directory`
+- **Arguments**: `directory: "Dictionary1"` (plugin name or path)
 
-**Examples:**
-- `review_plugin_directory` with `directory: "Dictionary1"`
-- `review_plugin_directory` with `directory: "NetworkControl"`
-- `review_plugin_directory` with `directory: "ThunderNanoServices/WebProxy"`
+## CRITICAL INSTRUCTIONS
 
-## IMPORTANT
+1. **ONLY** call the `review_plugin_directory` tool
+2. **ONLY** report findings that come directly from the tool response
+3. Do **NOT** add your own analysis or findings
+4. Do **NOT** suggest fixes beyond what the tool provides
+5. Present EXACTLY what the tool returns - no modifications
 
-Only report findings that come directly from the MCP tool response. Do NOT add your own analysis or findings. Present ONLY what the tool returns.
+## Output
 
-## When to Use
-
-- User asks to review a plugin
-- User wants to check compliance for an entire plugin directory
-- User mentions checking "Dictionary", "NetworkControl", or other Thunder plugins
-
-## How to Call
-
-```
-Call the MCP tool: review-dir
-Arguments:
-  directory: <plugin_name_or_path>
-```
-
-**Examples:**
-- `review-dir Dictionary1`
-- `review-dir NetworkControl`
-- `review-dir ThunderNanoServices/WebProxy`
-
-## Auto-Resolution
-
-The tool automatically finds plugins in:
-- `ThunderNanoServices/<plugin_name>`
-- `Thunder/Source/plugins/<plugin_name>`
-
-You can pass just the plugin name (e.g., "Dictionary1") or a full path.
-
-## Output Format
-
-Present findings as:
-
-```markdown
-# Thunder Plugin Review: <Plugin Name>
-
-## Summary
-- Files reviewed: <count>
-- Files with issues: <count>
-- Total findings: <count>
-
-### By Severity
-- 🔴 **CRITICAL**: <count>
-- 🟠 **HIGH**: <count>
-- 🟡 **MEDIUM**: <count>
-- ⚪ **LOW**: <count>
-
-## Detailed Findings
-
-### <filename>
-
-1. **<RULE_ID>**: <description>
-   - **Severity**: <emoji> <level>
-   - **Line**: <line_number>
-   - **Issue**: <details>
-   - **Fix**: <suggestion>
-```
-
-## Example Usage
-
-**User says:** "Review Dictionary1 plugin"
-
-**You do:**
-1. Call tool `review-dir` with argument `directory: "Dictionary1"`
-2. Format and present the results
-3. Summarize critical issues at the top
-
-**User says:** "Check NetworkControl for compliance"
-
-**You do:**
-1. Call tool `review-dir` with argument `directory: "NetworkControl"`
-2. Present formatted results
+Simply present the tool's findings in a clear format with:
+- Summary (files reviewed, total findings, severity counts)
+- Detailed findings by file
+- Each finding with: Rule ID, Severity, Line, Issue, Fix (from tool)
