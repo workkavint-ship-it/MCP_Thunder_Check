@@ -1,0 +1,3 @@
+startmode = "@PLUGIN_DICTIONARY3_STARTMODE@"
+configuration = JSON()
+configuration.add("example", "@PLUGIN_DICTIONARY3_EXAMPLE@")

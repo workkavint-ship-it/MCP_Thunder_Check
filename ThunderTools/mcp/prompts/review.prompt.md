@@ -5,25 +5,16 @@ description: Review an entire Thunder plugin directory for compliance issues
 
 # Review Thunder Plugin Directory
 
-Use the **review_plugin_directory** MCP tool to review all C++ files in a Thunder plugin directory.
+Use the MCP tool `review_plugin_directory`.
 
-## How to Call
+## Required Workflow
 
-Call the MCP tool with:
-- **Tool Name**: `review_plugin_directory`
-- **Arguments**: `directory: "Dictionary1"` (plugin name or path)
+1. Ask for plugin directory if missing.
+2. Call `review_plugin_directory` with:
+   - `directory`: plugin name or path
+3. Present only the returned findings.
 
-## CRITICAL INSTRUCTIONS
+## Rules
 
-1. **ONLY** call the `review_plugin_directory` tool
-2. **ONLY** report findings that come directly from the tool response
-3. Do **NOT** add your own analysis or findings
-4. Do **NOT** suggest fixes beyond what the tool provides
-5. Present EXACTLY what the tool returns - no modifications
-
-## Output
-
-Simply present the tool's findings in a clear format with:
-- Summary (files reviewed, total findings, severity counts)
-- Detailed findings by file
-- Each finding with: Rule ID, Severity, Line, Issue, Fix (from tool)
+- Do not add manual findings.
+- Keep output grouped by file and severity.

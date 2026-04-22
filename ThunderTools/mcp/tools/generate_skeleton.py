@@ -14,7 +14,33 @@ import subprocess
 import tempfile
 import yaml
 from pathlib import Path
-from typing import Any, Dict
+from typing import Any, Dict, List, Optional
+from dataclasses import dataclass, field
+
+
+@dataclass
+class PluginConfig:
+    """Plugin configuration for skeleton generation"""
+    plugin_name: str
+    out_of_process: bool = False
+    plugin_config: bool = True
+    interface_paths: List[str] = field(default_factory=list)
+    output_directory: str = "."
+    preconditions: List[str] = field(default_factory=list)
+    terminations: List[str] = field(default_factory=list)
+    controls: List[str] = field(default_factory=list)
+
+
+@dataclass
+class GenerationResult:
+    """Result of skeleton generation"""
+    success: bool
+    plugin_name: str
+    output_path: Optional[Path] = None
+    generated_files: List[str] = field(default_factory=list)
+    stdout: str = ""
+    stderr: str = ""
+    error_message: str = ""
 
 
 class GenerateSkeletonTool:
@@ -28,8 +54,9 @@ class GenerateSkeletonTool:
     ]
 
     def __init__(self, base_path: Path):
+        """Initialize generator with workspace base path"""
         self.base_path = base_path
-        self.psg_path = Path(__file__).parent.parent / "PluginSkeletonGenerator"
+        self.psg_path = Path(__file__).parent.parent.parent / "PluginSkeletonGenerator"
 
     def get_definition(self) -> Dict[str, Any]:
         """Get tool definition for MCP"""
@@ -37,13 +64,10 @@ class GenerateSkeletonTool:
             "name": "generate_skeleton",
             "description": (
                 "Generate a Thunder plugin skeleton. "
-                "WORKFLOW — you MUST follow this exactly:\n"
-                "STEP 1: Call vscode_askQuestions (NOT this tool) with the interactive form "
-                "containing all plugin configuration questions with dropdowns and input fields. "
-                "STEP 2: Once you receive ALL answers from vscode_askQuestions, "
-                "call THIS tool with mode='generate' and all parameter values filled from the answers. "
-                "Do NOT ask follow-up questions. The mode='questionnaire' is ONLY for getting "
-                "the question structure if needed for reference."
+                "WORKFLOW: First call this tool with mode='questionnaire' to get the list of questions. "
+                "Then ask the user those questions directly in chat (one message with all questions). "
+                "Once the user answers, call this tool again with mode='generate' and all parameters filled in. "
+                "Do NOT use any external tools to collect answers."
             ),
             "inputSchema": {
                 "type": "object",
@@ -111,79 +135,50 @@ class GenerateSkeletonTool:
     #  QUESTIONNAIRE                                                       #
     # ------------------------------------------------------------------ #
     def _questionnaire(self) -> Dict[str, Any]:
-        """Return structured questions for vscode_askQuestions."""
-        default_out = str(self.base_path)
-        
-        # Return the structure that the AI should use with vscode_askQuestions
-        questions_structure = {
-            "questions": [
-                {
-                    "header": "plugin_name",
-                    "question": "Plugin Name (required) — Name for the plugin folder and class",
-                    "options": []  # Free text
-                },
-                {
-                    "header": "process_mode",
-                    "question": "Process Mode — How should the plugin run?",
-                    "options": [
-                        {
-                            "label": "In-Process",
-                            "description": "Plugin runs inside the WPEFramework process",
-                            "recommended": True
-                        },
-                        {
-                            "label": "Out-of-Process (OOP)",
-                            "description": "Plugin runs in its own separate process (requires interface paths)"
-                        }
-                    ]
-                },
-                {
-                    "header": "plugin_config",
-                    "question": "Custom Plugin Configuration — Need custom config block in JSON?",
-                    "options": [
-                        {
-                            "label": "Yes",
-                            "description": "Plugin needs custom configuration",
-                            "recommended": True
-                        },
-                        {
-                            "label": "No",
-                            "description": "No custom configuration needed"
-                        }
-                    ]
-                },
-                {
-                    "header": "interface_paths",
-                    "question": f"Interface Header Paths — Full paths to .h files (one per line, or leave empty)\nExample: {default_out}\\ThunderInterfaces\\interfaces\\IMyPlugin.h",
-                    "options": []  # Free text, multiline
-                },
-                {
-                    "header": "output_directory",
-                    "question": f"Output Directory — Where to create the plugin folder?\nDefault: {default_out}",
-                    "options": []  # Free text
-                },
-                {
-                    "header": "preconditions",
-                    "question": f"Preconditions — Subsystems required before plugin activates (comma-separated or leave empty)\nAvailable: {', '.join(self.SUBSYSTEMS)}",
-                    "options": []  # Free text
-                },
-                {
-                    "header": "terminations",
-                    "question": f"Terminations — Subsystems whose loss triggers plugin shutdown (comma-separated or leave empty)\nAvailable: {', '.join(self.SUBSYSTEMS)}",
-                    "options": []  # Free text
-                },
-                {
-                    "header": "controls",
-                    "question": f"Controls — Subsystems this plugin manages (comma-separated or leave empty)\nAvailable: {', '.join(self.SUBSYSTEMS)}",
-                    "options": []  # Free text
-                }
-            ]
-        }
-        
+        """Return the 8 questions as simple text that Copilot can present naturally."""
+        questions_text = """# Thunder Plugin Generation Questions
+
+Please provide answers to these 8 questions:
+
+**1. Plugin Name**
+   What should your plugin be called? (e.g., MyPlugin, Dictionary, NetworkControl)
+
+**2. Process Mode**
+   Should it run In-Process (inside WPEFramework) or Out-of-Process (separate process)?
+   - In-Process: Simpler, faster, shares memory with framework
+   - Out-of-Process (OOP): Isolated, more complex, needs interface files
+
+**3. Custom Configuration**
+   Does your plugin need custom JSON configuration? (Yes/No)
+
+**4. Interface Header Paths**
+   For OOP plugins: Full paths to interface .h files (one per line)
+   For In-Process: Leave empty
+   Example: /home/user/Thunder/ThunderInterfaces/interfaces/IMyPlugin.h
+
+**5. Output Directory**
+   Where to create the plugin folder? (leave empty for current directory)
+
+**6. Preconditions**
+   Which subsystems must be available before this plugin loads? (comma-separated, or empty)
+   Available: PLATFORM, NETWORK, SECURITY, IDENTIFIER, INTERNET, LOCATION, TIME,
+              PROVISIONING, DECRYPTION, GRAPHICS, WEBSOURCE, STREAMING, BLUETOOTH,
+              CRYPTOGRAPHY, INSTALLATION
+
+**7. Terminations**
+   Which subsystems' shutdown should trigger this plugin to shutdown? (comma-separated, or empty)
+
+**8. Controls**
+   Which subsystems does this plugin manage? (comma-separated, or empty)
+
+---
+
+Please provide all 8 answers together (you can copy this list and fill in your answers)."""
+
         return {
             "content": [{
                 "type": "text",
-                "text": f"USE_VSCODE_ASK_QUESTIONS\n\n{str(questions_structure)}"
+                "text": questions_text
             }]
         }
 
@@ -222,7 +217,16 @@ class GenerateSkeletonTool:
     # ------------------------------------------------------------------ #
     def _generate(self, arguments: Dict[str, Any]) -> Dict[str, Any]:
         """Generate the plugin skeleton using PSG."""
+        # Parse arguments into PluginConfig
         plugin_name = arguments.get("plugin_name")
+        
+        if not plugin_name:
+            return {
+                "content": [{
+                    "type": "text",
+                    "text": "❌ Error: plugin_name is required for mode='generate'."
+                }]
+            }
         
         # Parse process_mode - handle both boolean and string labels
         process_mode_raw = arguments.get("out_of_process", arguments.get("process_mode", False))
@@ -248,56 +252,67 @@ class GenerateSkeletonTool:
         output_dir = arguments.get("output_directory", ".")
         if isinstance(output_dir, str) and output_dir.lower() in ['default', '']:
             output_dir = "."
-
-        if not plugin_name:
-            return {
-                "content": [{
-                    "type": "text",
-                    "text": "❌ Error: plugin_name is required for mode='generate'."
-                }]
-            }
-
-        # Handle empty interface paths - create a minimal placeholder interface
+        
+        # Create PluginConfig
+        config = PluginConfig(
+            plugin_name=plugin_name,
+            out_of_process=out_of_process,
+            plugin_config=plugin_config,
+            interface_paths=interface_paths,
+            output_directory=output_dir,
+            preconditions=preconditions,
+            terminations=terminations,
+            controls=controls
+        )
+        
+        # Generate using core logic
+        result = self._generate_core(config)
+        
+        # Convert GenerationResult to MCP response
+        return self._format_result(result)
+    
+    def _generate_core(self, config: PluginConfig) -> GenerationResult:
+        """Core generation logic - uses PluginSkeletonGenerator.py"""
+        # Handle empty interface paths - create dummy if needed
+        interface_paths = config.interface_paths
+        created_dummy = False
+        
         if not interface_paths:
-            # Create a minimal dummy interface for basic skeleton
-            dummy_interface = self._create_dummy_interface(plugin_name)
+            dummy_interface = self._create_dummy_interface(config.plugin_name)
             interface_paths = [dummy_interface]
             created_dummy = True
         else:
-            created_dummy = False
-            # Validate that interface files exist
+            # Validate interface files exist
             missing_files = [p for p in interface_paths if not Path(p).exists()]
             if missing_files:
-                return {
-                    "content": [{
-                        "type": "text",
-                        "text": f"❌ Error: Interface files not found:\n" + "\n".join(f"  - {f}" for f in missing_files) +
-                                "\n\n💡 Provide full paths to interface header files in ThunderInterfaces/interfaces/"
-                    }]
-                }
+                return GenerationResult(
+                    success=False,
+                    plugin_name=config.plugin_name,
+                    error_message=f"Interface files not found: {', '.join(missing_files)}"
+                )
         
-        # Create config YAML
-        config = {
-            "PluginName": plugin_name,
-            "OutOfProcess": out_of_process,
-            "PluginConfig": plugin_config,
+        # Create config YAML for PSG
+        yaml_config = {
+            "PluginName": config.plugin_name,
+            "OutOfProcess": config.out_of_process,
+            "PluginConfig": config.plugin_config,
             "Paths": interface_paths,
-            "Preconditions": preconditions,
-            "Terminations": terminations,
-            "Controls": controls
+            "Preconditions": config.preconditions,
+            "Terminations": config.terminations,
+            "Controls": config.controls
         }
         
-        # Write to temporary config file
+        # Write temp config
         with tempfile.NamedTemporaryFile(mode='w', suffix='.yaml', delete=False) as f:
-            yaml.dump(config, f)
+            yaml.dump(yaml_config, f)
             config_path = f.name
         
         try:
-            # Prepare output directory — honour absolute paths from the user
-            raw_out = Path(output_dir)
-            full_output_dir = raw_out if raw_out.is_absolute() else self.base_path / output_dir
+            # Prepare output directory
+            raw_out = Path(config.output_directory)
+            full_output_dir = raw_out if raw_out.is_absolute() else self.base_path / config.output_directory
             full_output_dir.mkdir(parents=True, exist_ok=True)
-
+            
             # Run PluginSkeletonGenerator
             psg_script = self.psg_path / "PluginSkeletonGenerator.py"
             
@@ -309,75 +324,92 @@ class GenerateSkeletonTool:
                 timeout=60
             )
             
-            # Clean up temp files
+            # Clean up
             os.unlink(config_path)
             if created_dummy and os.path.exists(interface_paths[0]):
                 os.unlink(interface_paths[0])
             
-            # Check for generated plugin directory
-            plugin_dir = full_output_dir / plugin_name
+            # Check result
+            plugin_dir = full_output_dir / config.plugin_name
             
             if result.returncode == 0 and plugin_dir.exists():
-                # Success
                 generated_files = self._list_files(plugin_dir)
                 
-                output = f"# ✅ Plugin Skeleton Generated: {plugin_name}\n\n"
-                output += f"**Location:** `{full_output_dir / plugin_name}`\n"
-                output += f"**Mode:** {'Out-of-Process (OOP)' if out_of_process else 'In-Process'}\n\n"
-                if created_dummy:
-                    output += "⚠️ **Note:** Generated with minimal interface (no custom interfaces specified)\n\n"
-                output += "## Generated Files\n\n"
-                output += generated_files
-                output += "\n\n## Next Steps\n\n"
-                output += "1. Review the generated code\n"
-                output += "2. Implement plugin methods in the .cpp file\n"
-                output += "3. Update CMakeLists.txt if needed\n"
-                output += "4. Build and test your plugin\n\n"
-                output += "💡 **Tip:** Run `review_plugin_directory` to check for compliance issues.\n"
-                
-                if result.stdout:
-                    output += f"\n<details>\n<summary>Generator Output</summary>\n\n```\n{result.stdout}\n```\n</details>\n"
-                
+                return GenerationResult(
+                    success=True,
+                    plugin_name=config.plugin_name,
+                    output_path=plugin_dir,
+                    generated_files=generated_files,
+                    stdout=result.stdout,
+                    stderr=result.stderr
+                )
             else:
-                # Failure
-                output = f"# ❌ Plugin Generation Failed\n\n"
-                output += f"**Plugin Name:** {plugin_name}\n\n"
-                
-                if result.stderr:
-                    output += f"## Error Output\n\n```\n{result.stderr}\n```\n"
-                if result.stdout:
-                    output += f"\n## Standard Output\n\n```\n{result.stdout}\n```\n"
-                
-                output += f"\n**Return Code:** {result.returncode}\n"
-            
-            return {
-                "content": [{
-                    "type": "text",
-                    "text": output
-                }]
-            }
-            
+                return GenerationResult(
+                    success=False,
+                    plugin_name=config.plugin_name,
+                    stdout=result.stdout,
+                    stderr=result.stderr,
+                    error_message=f"Generation failed with return code {result.returncode}"
+                )
+        
         except subprocess.TimeoutExpired:
             os.unlink(config_path)
             if created_dummy and os.path.exists(interface_paths[0]):
                 os.unlink(interface_paths[0])
-            return {
-                "content": [{
-                    "type": "text",
-                    "text": "❌ Error: Plugin generation timed out (>60s)"
-                }]
-            }
+            return GenerationResult(
+                success=False,
+                plugin_name=config.plugin_name,
+                error_message="Generation timed out (>60s)"
+            )
         except Exception as e:
             if os.path.exists(config_path):
                 os.unlink(config_path)
             if created_dummy and os.path.exists(interface_paths[0]):
                 os.unlink(interface_paths[0])
-            return {
-                "content": [{
-                    "type": "text",
-                    "text": f"❌ Error generating plugin: {str(e)}"
-                }]
-            }
+            return GenerationResult(
+                success=False,
+                plugin_name=config.plugin_name,
+                error_message=f"Generation error: {str(e)}"
+            )
+    
+    def _format_result(self, result: GenerationResult) -> Dict[str, Any]:
+        """Convert GenerationResult to MCP response format"""
+        if not result.success:
+            output = f"# ❌ Plugin Generation Failed\n\n"
+            output += f"**Plugin Name:** {result.plugin_name}\n\n"
+            output += f"**Error:** {result.error_message}\n\n"
+            
+            if result.stderr:
+                output += f"## Error Output\n\n```\n{result.stderr}\n```\n"
+            if result.stdout:
+                output += f"\n## Standard Output\n\n```\n{result.stdout}\n```\n"
+        else:
+            output = f"# ✅ Plugin Skeleton Generated: {result.plugin_name}\n\n"
+            output += f"**Location:** `{result.output_path}`\n\n"
+            output += "## Generated Files\n\n"
+            output += self._format_file_list(result.generated_files)
+            output += "\n\n## Next Steps\n\n"
+            output += "1. Review the generated code\n"
+            output += "2. Implement plugin methods in the .cpp file\n"
+            output += "3. Update CMakeLists.txt if needed\n"
+            output += "4. Build and test your plugin\n\n"
+            output += "💡 **Tip:** Run `review_plugin_directory` to check for compliance issues.\n"
+            
+            if result.stdout:
+                output += f"\n<details>\n<summary>Generator Output</summary>\n\n```\n{result.stdout}\n```\n</details>\n"
+        
+        return {
+            "content": [{
+                "type": "text",
+                "text": output
+            }]
+        }
+    
+    def _format_file_list(self, files: List[str]) -> str:
+        """Format file list for display"""
+        if not files:
+            return "No files generated"
+        return "\n".join(f"- {f}" for f in files)
     
     def _create_dummy_interface(self, plugin_name: str) -> str:
         """Create a minimal dummy interface for basic skeleton generation"""
@@ -404,25 +436,10 @@ namespace Exchange {{
             f.write(interface_content)
             return f.name
     
-    def _list_files(self, plugin_dir: Path) -> str:
-        """List all generated files in tree format"""
-        output = []
-        
-        def add_tree(path: Path, prefix: str = ""):
-            try:
-                items = sorted(path.iterdir(), key=lambda x: (not x.is_dir(), x.name))
-                for i, item in enumerate(items):
-                    is_last = i == len(items) - 1
-                    current_prefix = "└── " if is_last else "├── "
-                    output.append(f"{prefix}{current_prefix}{item.name}")
-                    
-                    if item.is_dir() and not item.name.startswith('.'):
-                        next_prefix = prefix + ("    " if is_last else "│   ")
-                        add_tree(item, next_prefix)
-            except PermissionError:
-                pass
-        
-        output.append(f"📁 {plugin_dir.name}/")
-        add_tree(plugin_dir)
-        
-        return "\n".join(output)
+    def _list_files(self, plugin_dir: Path) -> List[str]:
+        """List all generated files"""
+        files = []
+        for item in plugin_dir.rglob('*'):
+            if item.is_file():
+                files.append(str(item.relative_to(plugin_dir)))
+        return sorted(files)

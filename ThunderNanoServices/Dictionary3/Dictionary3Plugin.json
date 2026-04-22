@@ -1,0 +1,30 @@
+{
+  "$schema": "plugin.schema.json",
+  "info": {
+    "title": "Dictionary3 Plugin",
+    "callsign": "Dictionary3",
+    "locator": "libThunderDictionary3.so",
+    "status": "development",
+    "description": [
+      ""
+    ],
+    "version": "1.0"
+  },
+  "configuration": {
+    "type": "object",
+    "properties": {
+      "configuration": {
+        "type": "object",
+        "required": [],
+        "properties": {
+          "example": {
+            "type": "string",
+            "description": "Note: This is an example!"
+          }
+        }
+      }
+    }
+  },
+  "interface": {
+  }
+}
