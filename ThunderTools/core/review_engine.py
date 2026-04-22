@@ -69,7 +69,7 @@ class ReviewEngine:
         
         with open(rules_file, 'r', encoding='utf-8') as f:
             rules = yaml.safe_load(f)
-        
+
         num_categories = len(rules.get('categories', []))
         print(f"Loaded {num_categories} rule categories")
         return rules

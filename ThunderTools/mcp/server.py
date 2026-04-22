@@ -34,20 +34,11 @@ class ThunderToolsServer:
         # Base path for workspace
         self.base_path = Path(__file__).parents[2]
         
-        # Initialize tools with both full and short names
-        review_plugin = ReviewPluginTool(self.base_path)
-        review_dir = ReviewDirectoryTool(self.base_path)
-        generate = GenerateSkeletonTool(self.base_path)
-        
+        # Initialize tools
         self.tools = {
-            # Short aliases (recommended for # syntax)
-            "review-file": review_plugin,
-            "review-dir": review_dir,
-            "generate": generate,
-            # Full names (for backwards compatibility)
-            "review_plugin": review_plugin,
-            "review_plugin_directory": review_dir,
-            "generate_skeleton": generate
+            "review_plugin": ReviewPluginTool(self.base_path),
+            "review_plugin_directory": ReviewDirectoryTool(self.base_path),
+            "generate_skeleton": GenerateSkeletonTool(self.base_path)
         }
     
     def handle_initialize(self, params: Dict[str, Any]) -> Dict[str, Any]:
