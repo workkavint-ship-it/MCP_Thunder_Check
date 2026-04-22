@@ -5,7 +5,37 @@ description: Generate a new Thunder plugin skeleton with proper structure
 
 # Generate Thunder Plugin Skeleton
 
-Use the **generate** or **generate_skeleton** MCP tool to create a new Thunder plugin with proper structure and boilerplate.
+Use the **generate_skeleton** MCP tool to create a new Thunder plugin with proper structure and boilerplate.
+
+## When to Use
+
+- User wants to create a new Thunder plugin
+- User asks to scaffold or generate a plugin
+- User needs plugin skeleton code
+
+## Two-Step Workflow (REQUIRED)
+
+### Step 1: Collect Information with vscode_askQuestions
+
+**ALWAYS use vscode_askQuestions FIRST** to gather all plugin configuration before calling the tool.
+
+### Step 2: Call the Tool
+
+```
+Call the MCP tool: generate_skeleton
+Arguments:
+  mode: "generate"
+  plugin_name: <from answers>
+  plugin_namespace: <from answers>
+  jsonrpc: <true/false>
+  comrpc: <true/false>
+  preconditions: <array, e.g. ["PLATFORM", "NETWORK"]>
+  outdir: <output directory>
+```
+
+## IMPORTANT
+
+Do NOT ask follow-up questions one-by-one. Use vscode_askQuestions to collect everything at once, then call `generate_skeleton`.
 
 ## When to Use
 

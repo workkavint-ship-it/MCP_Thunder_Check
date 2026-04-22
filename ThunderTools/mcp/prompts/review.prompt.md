@@ -5,7 +5,30 @@ description: Review an entire Thunder plugin directory for compliance issues
 
 # Review Thunder Plugin Directory
 
-Use the **review-dir** or **review_plugin_directory** MCP tool to review all C++ files in a Thunder plugin directory.
+Use the **review_plugin_directory** MCP tool to review all C++ files in a Thunder plugin directory.
+
+## When to Use
+
+- User asks to review a plugin
+- User wants to check compliance for an entire plugin directory
+- User mentions checking "Dictionary", "NetworkControl", or other Thunder plugins
+
+## How to Call
+
+```
+Call the MCP tool: review_plugin_directory
+Arguments:
+  directory: <plugin_name_or_path>
+```
+
+**Examples:**
+- `review_plugin_directory` with `directory: "Dictionary1"`
+- `review_plugin_directory` with `directory: "NetworkControl"`
+- `review_plugin_directory` with `directory: "ThunderNanoServices/WebProxy"`
+
+## IMPORTANT
+
+Only report findings that come directly from the MCP tool response. Do NOT add your own analysis or findings. Present ONLY what the tool returns.
 
 ## When to Use
 

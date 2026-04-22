@@ -5,7 +5,29 @@ description: Review specific Thunder plugin files for compliance
 
 # Review Thunder Plugin Files
 
-Use the **review-file** or **review_plugin** MCP tool to review specific C++ files against Thunder framework guidelines.
+Use the **review_plugin** MCP tool to review specific C++ files against Thunder framework guidelines.
+
+## When to Use
+
+- User asks to review specific files
+- User has files open and wants them checked
+- User mentions checking "this file" or specific filenames
+
+## How to Call
+
+```
+Call the MCP tool: review_plugin
+Arguments:
+  file_paths: [<file1>, <file2>, ...]
+```
+
+**Examples:**
+- `review_plugin` with `file_paths: ["Dictionary1.cpp"]`
+- `review_plugin` with `file_paths: ["NetworkControl.cpp", "NetworkControl.h"]`
+
+## IMPORTANT
+
+Only report findings that come directly from the MCP tool response. Do NOT add your own analysis or findings. Present ONLY what the tool returns.
 
 ## When to Use
 
