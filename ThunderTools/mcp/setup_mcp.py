@@ -9,7 +9,6 @@ Run this in your Thunder_MCP directory to get the right config.
 import sys
 import os
 import json
-import shutil
 from pathlib import Path
 import platform
 
@@ -53,11 +52,15 @@ def generate_config(client_type):
     
     if client_type == "vscode":
         return {
+            "github.copilot.chat.mcp.enabled": True,
             "github.copilot.chat.mcp.servers": {
                 "thunder-tools": {
                     "command": "python",
                     "args": ["${workspaceFolder}/ThunderTools/mcp/server.py"]
                 }
+            },
+            "chat.promptFilesLocations": {
+                "ThunderTools/mcp/prompts": True
             }
         }
     else:  # Generic (Claude Desktop, Cursor, etc.)
@@ -157,8 +160,8 @@ def main():
         print("     - /review-file Dictionary.cpp")
         print("     - /generate")
         print()
-        print("  💡 Slash commands use prompts from .github/prompts/")
-        print("     (auto-copied from ThunderTools/mcp/prompts/ when you save config)")
+        print("  💡 Slash commands use prompts from ThunderTools/mcp/prompts/")
+        print("     (loaded directly - no .github/ directory needed!)")
         print()
         print("  ℹ️  Natural language also works: 'Review Dictionary1 for compliance'")
     elif config_type == "cursor":
@@ -198,23 +201,6 @@ def main():
                 json.dump(config, f, indent=2)
             
             print(f"✅ Saved to {settings_file}")
-            
-            # Copy prompts to .github/prompts for VS Code slash commands
-            prompts_source = Path(__file__).parent / "prompts"
-            if prompts_source.exists():
-                github_prompts = Path(".github/prompts")
-                github_prompts.mkdir(parents=True, exist_ok=True)
-                
-                # Copy all .prompt.md files
-                copied_count = 0
-                for prompt_file in prompts_source.glob("*.prompt.md"):
-                    shutil.copy2(prompt_file, github_prompts / prompt_file.name)
-                    copied_count += 1
-                
-                if copied_count > 0:
-                    print(f"✅ Copied {copied_count} prompt files to .github/prompts/")
-                    print("   Slash commands enabled: /review, /review-file, /generate")
-            
             print()
             print("   🔄 Restart VS Code to activate Thunder Tools!")
             print()
@@ -222,6 +208,9 @@ def main():
             print("      - /review Dictionary1")
             print("      - /review-file Dictionary.cpp")
             print("      - /generate")
+            print()
+            print("   📁 Prompts loaded from: ThunderTools/mcp/prompts/")
+            print("      (No .github/ directory needed!)
     
     return 0
 
