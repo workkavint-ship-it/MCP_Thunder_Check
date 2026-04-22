@@ -210,7 +210,7 @@ def main():
             print("      - /generate")
             print()
             print("   📁 Prompts loaded from: ThunderTools/mcp/prompts/")
-            print("      (No .github/ directory needed!)
+            print("      (No .github/ directory needed!)")
     
     return 0
 
